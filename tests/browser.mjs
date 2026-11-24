@@ -45,6 +45,10 @@ test('a fresh Chrome extension translates a web selection and a matched PDF page
   const extensionPath = resolve('.output/chrome-mv3');
   const manifest = JSON.parse(await readFile(join(extensionPath, 'manifest.json'), 'utf8'));
   assert.equal(manifest.manifest_version, 3);
+  assert.deepEqual(new Set(manifest.permissions), new Set(['activeTab', 'scripting', 'offscreen']));
+  assert.equal(manifest.host_permissions, undefined);
+  assert.equal(manifest.optional_host_permissions, undefined);
+  assert.equal(manifest.content_scripts, undefined);
   const { chromium } = await import('playwright');
 
   const profile = await mkdtemp(join(tmpdir(), 'textbrucke-chrome-'));
@@ -75,6 +79,7 @@ test('a fresh Chrome extension translates a web selection and a matched PDF page
       `--load-extension=${extensionPath}`,
       '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',
       '--disable-background-networking',
+      '--enable-unsafe-extension-debugging',
     ],
   });
   await context.route('**/*', (route) => {
@@ -86,10 +91,27 @@ test('a fresh Chrome extension translates a web selection and a matched PDF page
 
   const background = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
   const viewerUrl = new URL('/viewer.html', background.url()).href;
+  const extensionId = new URL(viewerUrl).hostname;
+  const browserProtocol = await context.browser().newBrowserCDPSession();
+
+  async function clickToolbar(page) {
+    await page.bringToFront();
+    const { targetInfos } = await browserProtocol.send('Target.getTargets', {
+      filter: [{ type: 'tab' }, { exclude: true }],
+    });
+    const tab = targetInfos.find((target) => target.url === page.url());
+    assert.ok(tab, `No Chrome tab target found for ${page.url()}`);
+    await browserProtocol.send('Extensions.triggerAction', { id: extensionId, targetId: tab.targetId });
+  }
+
   const page = context.pages()[0] ?? await context.newPage();
   const base = `http://127.0.0.1:${server.address().port}`;
   await page.goto(base);
+  const popoverElement = page.locator('[aria-label="English translation"]');
+  assert.equal(await popoverElement.count(), 0, 'website access starts only after the toolbar action');
   await context.setOffline(true);
+  await clickToolbar(page);
+  await popoverElement.waitFor({ state: 'attached', timeout: 5_000 });
 
   const phrase = await page.locator('#phrase').evaluate((element) => {
     const range = document.createRange();
@@ -166,7 +188,7 @@ test('a fresh Chrome extension translates a web selection and a matched PDF page
   const popup = await context.newPage();
   const pdfTab = await context.newPage();
   await pdfTab.goto(`${base}/document`);
-  await pdfTab.bringToFront();
+  await clickToolbar(pdfTab);
   await popup.goto(new URL('/popup.html', viewerUrl).href);
   const ready = context.waitForEvent('page');
   await popup.getByRole('button', { name: 'Translate PDF in this tab' }).click();

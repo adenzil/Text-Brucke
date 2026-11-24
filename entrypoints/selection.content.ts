@@ -3,8 +3,7 @@ import { translateText } from '../lib/translation';
 import styles from '../styles/selection.css?inline';
 
 export default defineContentScript({
-  matches: ['http://*/*', 'https://*/*'],
-  allFrames: true,
+  registration: 'runtime',
   main(context) {
     const host = document.createElement('div');
     host.hidden = true;

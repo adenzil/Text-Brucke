@@ -8,8 +8,7 @@ export default defineConfig({
     name: 'Textbrücke',
     description: 'Translate selected German text and read PDFs side by side in English, entirely on your device.',
     minimum_chrome_version: '145',
-    permissions: ['activeTab', 'offscreen'],
-    host_permissions: ['http://*/*', 'https://*/*'],
+    permissions: ['activeTab', 'scripting', 'offscreen'],
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
     },

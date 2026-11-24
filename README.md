@@ -15,7 +15,7 @@ Open `chrome://extensions`, turn on **Developer mode**, and choose **Load unpack
 
 ## Use
 
-- **Web page** — Refresh tabs that were already open when you installed or reloaded Textbrücke. Select German text on the page. Press Escape to dismiss the translation.
+- **Web page** — Click Textbrücke in the Chrome toolbar once on the page you want to use, then close the menu and select German text. Click the toolbar icon again after loading a new page. Press Escape to dismiss the translation.
 - **PDF open in Chrome** — Open the extension toolbar menu and choose **Translate PDF in this tab**.
 - **Local PDF** — Choose **Open a local PDF** in the extension toolbar menu, then select the file. Use this route for downloaded PDFs and web PDFs that cannot be fetched again from their original URL.
 
@@ -23,7 +23,7 @@ The English pane translates the current page as you read. It keeps graphics and 
 
 Both translation features work offline from first use. The extension bundles its model and runtime and keeps selected text and PDF translations on the device. Opening a web PDF requires access to its original URL. [Model, engine, and license information](public/translation/NOTICE.md)
 
-If the popover is missing after a refresh, open Chrome’s **Extensions** menu and check that Textbrücke can read and change site data on the current site. The popover runs on ordinary web pages. For Chrome’s built-in PDF viewer, use **Translate PDF in this tab**. [Chrome site access settings](https://support.google.com/chrome/answer/2664769)
+Textbrücke uses Chrome’s temporary access to the tab when you click the toolbar icon. Selection translation is available on ordinary web pages and permitted frames within that tab. For Chrome’s built-in PDF viewer, use **Translate PDF in this tab** and keep the source tab open while the document loads. [Chrome activeTab permission](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab)
 
 ## Verify
 
