@@ -1,0 +1,17 @@
+:root { color-scheme: light; background: #fcfcf6; color: #1b2e27; font: 14px/1.45 system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body { width: 302px; padding: 17px; margin: 0; }
+header { display: flex; align-items: center; gap: 10px; }
+h1, p { margin: 0; }
+h1 { font-size: 17px; font-weight: 720; }
+header p, .hint, #status { color: #516256; }
+header p, #status { font-size: 12px; }
+.hint { margin: 15px 0; }
+button { display: block; width: 100%; border-radius: 7px; border: 1px solid #d5dbcc; min-height: 39px; padding: 6px 9px; font: inherit; font-weight: 640; color: inherit; background: #f3f5ed; cursor: pointer; }
+button + button { margin-top: 7px; }
+button:hover { background: #e6ede2; }
+button:disabled { opacity: .5; cursor: default; }
+button:focus-visible { outline: 2px solid #307752; outline-offset: 2px; }
+#translate-pdf:not(:disabled) { background: #204e3c; color: #fff; border-color: #204e3c; }
+#translate-pdf:hover:not(:disabled) { background: #153b2d; }
+#status:not(:empty) { margin-top: 8px; }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PDF reader · Textbrücke</title>
+    <link rel="icon" href="/icon/32.png">
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="identity">
+        <img src="/icon/48.png" alt="" width="36" height="36">
+        <div><strong>Textbrücke</strong><span id="document-name">PDF reader</span></div>
+      </div>
+      <div id="navigation" class="navigation" hidden>
+        <button id="previous" type="button" aria-label="Previous page">←</button>
+        <div class="page-control">
+          <input id="page-number" type="text" inputmode="numeric" aria-label="Page number" value="1" autocomplete="off">
+          <span id="page-count"></span>
+        </div>
+        <button id="next" type="button" aria-label="Next page">→</button>
+        <label class="zoom-control">
+          <span class="sr-only">Zoom</span>
+          <select id="zoom">
+            <option value="fit">Fit width</option>
+            <option value="0.75">75%</option>
+            <option value="1">100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+            <option value="2">200%</option>
+          </select>
+        </label>
+      </div>
+      <button type="button" class="open-button" data-open>Open PDF</button>
+      <input id="file" type="file" accept="application/pdf,.pdf" hidden>
+    </header>
+
+    <main>
+      <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+        <div class="welcome-card">
+          <span class="language" aria-label="German to English">DE <span>→</span> EN</span>
+          <h1 id="welcome-title">Read a PDF in English</h1>
+          <p>Open a German PDF with selectable text. Its English translation appears alongside the original, page by page.</p>
+          <button type="button" class="primary" data-open>Choose a PDF</button>
+          <p id="open-status" class="open-status" role="status"></p>
+        </div>
+      </section>
+
+      <div id="spread" class="spread" hidden>
+        <section class="pane" aria-label="Original PDF">
+          <header class="pane-header"><h2>Original</h2><span class="language-chip">DE</span></header>
+          <div id="original-scroll" class="pane-scroll" tabindex="0" aria-label="Scroll original page">
+            <div id="original-page" class="page-slot"></div>
+          </div>
+        </section>
+        <section class="pane" aria-label="English PDF">
+          <header class="pane-header"><h2>Translation</h2><span class="language-chip english">EN</span><span id="translation-status" role="status"></span></header>
+          <div id="english-scroll" class="pane-scroll" tabindex="0" aria-label="Scroll translated page">
+            <div id="english-page" class="page-slot"></div>
+            <div id="text-fallback" class="fallback" lang="en" hidden></div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <dialog id="password-dialog" aria-labelledby="password-title">
+      <form method="dialog">
+        <h2 id="password-title">Unlock this PDF</h2>
+        <p id="password-status"></p>
+        <label for="password">PDF password</label>
+        <input id="password" type="password" autocomplete="off" required>
+        <div class="dialog-actions">
+          <button value="cancel" formnovalidate>Cancel</button>
+          <button value="unlock" class="primary">Unlock</button>
+        </div>
+      </form>
+    </dialog>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

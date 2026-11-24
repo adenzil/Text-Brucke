@@ -1,0 +1,37 @@
+:host {
+  all: initial !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
+  color-scheme: light;
+}
+
+:host([hidden]) { display: none !important; }
+
+.popover {
+  box-sizing: border-box;
+  position: fixed;
+  width: max-content;
+  min-width: min(150px, calc(100vw - 20px));
+  max-width: min(380px, calc(100vw - 20px));
+  padding: 11px 14px 12px;
+  background: #132821;
+  color: #f7f7ed;
+  border: 1px solid #426456;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px #10241f45;
+  font: 400 15px/1.5 system-ui, sans-serif;
+  pointer-events: auto;
+  text-align: left;
+}
+
+.language {
+  display: block;
+  color: #b9d5be;
+  font: 650 10px/1.6 system-ui, sans-serif;
+  letter-spacing: .1em;
+  margin-bottom: 3px;
+}
+
+.result { overflow: auto; max-height: min(240px, 50vh); overflow-wrap: anywhere; }

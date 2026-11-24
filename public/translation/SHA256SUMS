@@ -1,0 +1,6 @@
+bc2fc98d859845162817f9526c39eb1ca4805f7149dfebc0fbcda4d2af68e13c  bergamot-translator-worker.js
+735d4d95ede043c48f146b9a89336077f18885ad30b7e9a6a86c51a73ca02e7b  bergamot-translator-worker.wasm
+90257af9ee0758983501bdce77ca7ec168cd7360d4689298c20a81b0251d6b62  translator-worker.js
+231e9caf62e0e867775d5f4c1f4cfae21e37c70d9bf2bd628fa468aeeb2ba869  lex.50.50.deen.s2t.bin.gz
+38b245bcfc23f6d61fd98a187436ea1320a38f41896df411b103df3e83f51681  model.deen.intgemm.alphas.bin.gz
+88dcd7fdbf20dc60837ce837244d0d55b20f7079f2cbd2ba8e63530632028310  vocab.deen.spm.gz
