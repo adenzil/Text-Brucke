@@ -6,9 +6,9 @@ export default defineConfig({
   manifestVersion: 3,
   manifest: {
     name: 'Textbrücke',
-    description: 'Translate selected German text and read PDFs side by side in English, entirely on your device.',
+    description: 'Translate German text and images and read PDFs side by side in English, entirely on your device.',
     minimum_chrome_version: '145',
-    permissions: ['activeTab', 'scripting', 'offscreen'],
+    permissions: ['activeTab', 'scripting', 'offscreen', 'contextMenus'],
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
     },
@@ -16,6 +16,17 @@ export default defineConfig({
   },
   hooks: {
     async 'build:publicAssets'(wxt, files) {
+      for (const [source, name] of [
+        ['tesseract.js/dist/worker.min.js', 'worker.min.js'],
+        ['tesseract.js/dist/worker.min.js.LICENSE.txt', 'worker.min.js.LICENSE.txt'],
+        ['tesseract.js/LICENSE.md', 'LICENSE.tesseract.js'],
+        ['tesseract.js-core/LICENSE', 'LICENSE.tesseract.js-core'],
+        ['tesseract.js-core/tesseract-core-lstm.js', 'tesseract-core-lstm.js'],
+        ['tesseract.js-core/tesseract-core-lstm.wasm', 'tesseract-core-lstm.wasm'],
+      ] as const) {
+        files.push({ absoluteSrc: resolve(wxt.config.root, 'node_modules', source), relativeDest: `ocr/${name}` });
+      }
+
       const pdfjs = resolve(wxt.config.root, 'node_modules/pdfjs-dist');
       for (const relativePath of ['LICENSE', 'build/pdf.worker.mjs']) {
         files.push({ absoluteSrc: resolve(pdfjs, relativePath), relativeDest: `pdfjs/${relativePath}` });

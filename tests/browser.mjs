@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -41,21 +41,54 @@ function fixturePdf() {
   return Buffer.from(pdf);
 }
 
-test('a fresh Chrome extension translates a web selection and a matched PDF page offline', { timeout: 90_000 }, async (t) => {
+const imageLines = {
+  german: [
+    'Guten Morgen! Schön, dass Sie hier sind.',
+    'Die Bibliothek öffnet heute um neun Uhr.',
+    'Bitte schließen Sie die Tür leise.',
+  ],
+  english: [
+    'Good morning! Thank you for visiting.',
+    'The library opens at nine this morning.',
+    'Please close the door quietly behind you.',
+  ],
+  uncertain: ['12345'],
+  blank: [],
+};
+
+test('a fresh Chrome extension translates web text, PDFs, and images offline', { timeout: 120_000 }, async (t) => {
   const extensionPath = resolve('.output/chrome-mv3');
   const manifest = JSON.parse(await readFile(join(extensionPath, 'manifest.json'), 'utf8'));
   assert.equal(manifest.manifest_version, 3);
-  assert.deepEqual(new Set(manifest.permissions), new Set(['activeTab', 'scripting', 'offscreen']));
+  assert.deepEqual(new Set(manifest.permissions), new Set(['activeTab', 'scripting', 'offscreen', 'contextMenus']));
   assert.equal(manifest.host_permissions, undefined);
   assert.equal(manifest.optional_host_permissions, undefined);
   assert.equal(manifest.content_scripts, undefined);
   const { chromium } = await import('playwright');
 
   const profile = await mkdtemp(join(tmpdir(), 'textbrucke-chrome-'));
+  const testExtension = join(profile, 'extension');
   let context;
   const server = createServer((request, response) => {
     if (request.url === '/document') {
       response.writeHead(200, { 'Content-Type': 'application/pdf' }).end(fixturePdf());
+      return;
+    }
+    const imageRequest = /^\/ocr-(german|english|uncertain|blank)(\.svg)?$/.exec(request.url);
+    if (imageRequest) {
+      const [, kind, svg] = imageRequest;
+      if (svg) {
+        const lines = imageLines[kind].map((line, index) => `<text x="22" y="${112 + index * 55}">${line}</text>`);
+        response.writeHead(200, { 'Content-Type': 'image/svg+xml' }).end(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="760" height="290"><rect width="760" height="290" fill="white"/><g font-family="Arial, sans-serif" font-size="32"><text x="22" y="32">CLIPPED HEADER</text>${lines.join('')}</g></svg>`,
+        );
+      } else {
+        response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(
+          `<!doctype html><body style="margin:40px"><p>Neighboring page text</p>
+          <div style="width:850px;height:240px;overflow:hidden"><img src="http://localhost:${server.address().port}/ocr-${kind}.svg"
+            style="display:block;width:850px;height:290px;object-fit:contain;margin-top:-50px;border-inline:5px solid #a34;background:#fbd"></div></body>`,
+        );
+      }
       return;
     }
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -70,21 +103,33 @@ test('a fresh Chrome extension translates a web selection and a matched PDF page
     await rm(profile, { recursive: true, force: true });
   });
 
+  await cp(extensionPath, testExtension, { recursive: true });
+  const workerPath = join(testExtension, manifest.background.service_worker);
+  const workerSource = await readFile(workerPath, 'utf8');
+  // Chrome's native context menu is outside Playwright's page automation.
+  await writeFile(workerPath, `
+    const addImageMenuListener = chrome.contextMenus.onClicked.addListener.bind(chrome.contextMenus.onClicked);
+    chrome.contextMenus.onClicked.addListener = (listener) => {
+      globalThis.clickImageMenuForTest = listener;
+      addImageMenuListener(listener);
+    };
+    ${workerSource}`);
+
   context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     headless: true,
     viewport: { width: 1280, height: 900 },
     args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',
+      `--disable-extensions-except=${testExtension}`,
+      `--load-extension=${testExtension}`,
+      '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost',
       '--disable-background-networking',
       '--enable-unsafe-extension-debugging',
     ],
   });
   await context.route('**/*', (route) => {
     const url = new URL(route.request().url());
-    return url.hostname === '127.0.0.1' || url.protocol === 'chrome-extension:'
+    return ['127.0.0.1', 'localhost'].includes(url.hostname) || url.protocol === 'chrome-extension:'
       ? route.continue()
       : route.abort();
   });
@@ -195,4 +240,49 @@ test('a fresh Chrome extension translates a web selection and a matched PDF page
   const remote = await ready;
   await remote.waitForURL(`${viewerUrl}?*`);
   await remote.locator('.pdf-translation-text').filter({ hasText: /good morning/i }).waitFor({ timeout: 30_000 });
+
+  const imagePage = await context.newPage();
+  async function translateImage(kind) {
+    await context.setOffline(false);
+    await imagePage.goto(`${base}/ocr-${kind}`);
+    const srcUrl = await imagePage.locator('img').evaluate(async (image) => {
+      await image.decode();
+      return image.currentSrc;
+    });
+    await clickToolbar(imagePage);
+    await context.setOffline(true);
+    const ready = context.waitForEvent('page');
+    await background.evaluate(async ({ srcUrl, pageUrl }) => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      await chrome.tabs.setZoom(tab.id, 1.25);
+      globalThis.clickImageMenuForTest({
+        menuItemId: 'translate-image', mediaType: 'image', srcUrl, pageUrl, frameId: 0,
+      }, tab);
+    }, { srcUrl, pageUrl: imagePage.url() });
+    return ready;
+  }
+
+  const germanImage = await translateImage('german');
+  const englishText = germanImage.getByRole('region', { name: 'English translation' });
+  await englishText.getByText(/good morning/i).waitFor({ timeout: 30_000 });
+  const recognized = germanImage.getByRole('region', { name: 'Recognized text' });
+  await recognized.getByText(/Schön.*öffnet/is).waitFor();
+  assert.doesNotMatch(await recognized.innerText(), /neighboring|clipped/i);
+  const [cropWidth, cropHeight] = await germanImage.locator('#captured-image').evaluate((image) => [
+    image.naturalWidth, image.naturalHeight,
+  ]);
+  assert.ok(Math.abs(cropWidth - 950) <= 1 && Math.abs(cropHeight - 300) <= 1,
+    `expected a 760×240 CSS pixel crop at 125% zoom, got ${cropWidth}×${cropHeight}`);
+
+  const englishImage = await translateImage('english');
+  await englishImage.getByRole('status').getByText(/appears to be English/i).waitFor();
+  assert.equal(await englishImage.getByRole('region', { name: 'English translation' }).isVisible(), false);
+  assert.equal(await englishImage.getByRole('button', { name: 'Translate as German' }).isVisible(), false);
+
+  const ambiguousImage = await translateImage('uncertain');
+  await ambiguousImage.getByRole('button', { name: 'Translate as German' }).click();
+  await ambiguousImage.getByRole('region', { name: 'English translation' }).getByText('12345').waitFor();
+
+  const blankImage = await translateImage('blank');
+  await blankImage.getByRole('status').getByText(/no readable text/i).waitFor();
 });

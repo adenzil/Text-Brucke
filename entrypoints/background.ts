@@ -1,7 +1,10 @@
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
+import { registerImageTranslation } from '../lib/image-capture';
 
 export default defineBackground(() => {
+  registerImageTranslation();
+
   const documentPath = '/offscreen.html' as const;
   const documentUrl = browser.runtime.getURL(documentPath);
   let creating: Promise<void> | undefined;

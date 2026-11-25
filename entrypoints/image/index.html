@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/icon/32.png">
+    <title>Image translation · Textbrücke</title>
+  </head>
+  <body>
+    <header class="toolbar">
+      <img src="/icon/48.png" alt="" width="36" height="36">
+      <strong>Textbrücke</strong>
+    </header>
+    <main>
+      <h1>Image translation</h1>
+      <p id="status" role="status">Opening image…</p>
+      <button id="translate" type="button" hidden>Translate as German</button>
+      <div class="results">
+        <section id="preview" aria-labelledby="image-title" hidden>
+          <h2 id="image-title">Original image</h2>
+          <img id="captured-image" alt="Captured portion of the selected image">
+        </section>
+        <section id="recognized" aria-labelledby="recognized-title" hidden>
+          <h2 id="recognized-title">Recognized text</h2>
+          <p id="recognized-text" class="output"></p>
+        </section>
+        <section id="english" aria-labelledby="english-title" hidden>
+          <h2 id="english-title">English translation</h2>
+          <p id="english-text" class="output" lang="en"></p>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

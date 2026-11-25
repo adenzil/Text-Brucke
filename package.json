@@ -1,6 +1,6 @@
 {
   "name": "textbrucke",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,9 @@
     "test:browser": "node --test tests/browser.mjs"
   },
   "dependencies": {
-    "pdfjs-dist": "6.5.438"
+    "pdfjs-dist": "6.5.438",
+    "tesseract.js": "7.0.0",
+    "tesseract.js-core": "7.0.0"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
